@@ -3,8 +3,8 @@ ros_control_tester:
     type: joint_state_controller/JointStateController
     publish_rate: 50
 
-  joint1_position_controller:
-    type: effort_controllers/JointPositionController
+  joint1_velocity_controller:
+    type: velocity_controllers/JointVelocityController
     joint: toe_foot_joint
     pid: {p: 100.0, i: 0.0, d: 10.0}
 
@@ -16,4 +16,4 @@ ros_control_tester:
   joint3_position_controller:
     type: effort_controllers/JointPositionController
     joint: leg_arm_joint
-    pid: {p: 100.0, i: 0.0, d: 10.0}
+    pid: {p: 1000.0, i: 0.0, d: 10.0}
