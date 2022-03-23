@@ -1,10 +1,13 @@
+# Publishing joint states
 ros_control_tester:
   joint_state_controller:
     type: joint_state_controller/JointStateController
     publish_rate: 50
 
-  joint1_velocity_controller:
-    type: velocity_controllers/JointVelocityController
+# Defining joint controllers
+# Effort controllers can only control one joint.
+  joint1_position_controller:
+    type: effort_controllers/JointPositionController
     joint: toe_foot_joint
     pid: {p: 100.0, i: 0.0, d: 10.0}
 
@@ -12,8 +15,11 @@ ros_control_tester:
     type: effort_controllers/JointPositionController
     joint: foot_leg_joint
     pid: {p: 100.0, i: 0.0, d: 10.0}
-
-  joint3_position_controller:
-    type: effort_controllers/JointPositionController
-    joint: leg_arm_joint
-    pid: {p: 1000.0, i: 0.0, d: 10.0}
+      
+  joint3_trajectory_controller:
+    type: effort_controllers/JointTrajectoryController
+    joints:
+      - leg_arm_joint
+    gains:
+      leg_arm_joint: {p: 1000.0, i: 0.0, d: 10.0}
+    allow_partial_joints_goal: true

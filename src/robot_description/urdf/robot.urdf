@@ -33,10 +33,10 @@
   <transmission name="trans1">
     <type>transmission_interface/SimpleTransmission</type>
     <joint name="toe_foot_joint">
-      <hardwareInterface>hardware_interface/VelocityJointInterface</hardwareInterface>
+      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
     </joint>
     <actuator name="toe_foot_actuator">
-      <hardwareInterface>hardware_interface/VelocityJointInterface</hardwareInterface>
+      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
       <mechanicalReduction>1</mechanicalReduction>
    </actuator>
   </transmission>
