@@ -23,7 +23,7 @@
     <!-- The parameter namespace and controller namespace have to be the same as the robot namespace in the URDF file -->
     <node name='controller_spawner' pkg='controller_manager' type='spawner' respawn='false'
         output='screen' ns='/ros_control_tester'
-        args='joint_state_controller joint1_position_controller joint2_position_controller joint3_trajectory_controller' />
+        args='joint_state_controller joints_trajectory_controller' />
     
     <!-- Spawning a node that publishes the current robot joints' states -->
     <node name='robot_state_publisher' pkg='robot_state_publisher' type='robot_state_publisher'
@@ -31,7 +31,7 @@
         <remap from='/joint_states' to='/ros_control_tester/joint_states' />
     </node>
 
-    <!-- Launch a Python file that sends data to the controllers
+    <!-- Launch a Python file that sends data to the controllers -->
     <node name='ros_control_python_publisher' pkg='robot_control' type='control.py' />
-    -->
+    
 </launch>

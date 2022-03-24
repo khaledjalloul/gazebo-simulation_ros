@@ -42,6 +42,7 @@ def topic_trajectory():
 
     while pub.get_num_connections() < 1:
         pass
+    
     pub.publish(trajectory)
 
 
@@ -49,34 +50,35 @@ def feedback_cb(feedback):
     rospy.loginfo(feedback)
 
 def done_cb(state, result):
-    actionStates = {0: 'PENDING', 1: 'ACTIVE', 2: 'PREEMPTED', 3: 'SUCCEEDED', 4: 'ABORTED', 5: 'REJECTED', 6: 'PREEMPTING', 7: 'RECALLING', 8: 'RECALLED', 9: 'LOST'}
-    # rospy.loginfo("State: " + actionStates[state])
+    rospy.loginfo('result')
     rospy.loginfo(result)
 
 def action_trajectory():
 
-    client = actionlib.SimpleActionClient('/ros_control_tester/joint3_trajectory_controller/follow_joint_trajectory', FollowJointTrajectoryAction)
+    client = actionlib.SimpleActionClient('/ros_control_tester/joints_trajectory_controller/follow_joint_trajectory', FollowJointTrajectoryAction)
     client.wait_for_server()
-
-    action_goal = FollowJointTrajectoryActionGoal()
-    action_goal.header = Header(stamp = rospy.Time.now())
 
     goal = FollowJointTrajectoryGoal()
 
     trajectory = JointTrajectory()
 
     trajectory.header = Header(stamp = rospy.Time.now())
-    trajectory.joint_names = ['leg_arm_joint']
+    trajectory.joint_names = ['toe_foot_joint', 'foot_leg_joint', 'leg_arm_joint']
 
     points = []
-    points.append(JointTrajectoryPoint(positions = [0.0], velocities = [1.0]))
-    points.append(JointTrajectoryPoint(positions = [1.0], velocities = [1.0]))
-    points.append(JointTrajectoryPoint(positions = [1.5], velocities = [1.0]))
-    points.append(JointTrajectoryPoint(positions = [2.5], velocities = [1.0]))
+    points.append(JointTrajectoryPoint(positions = [1.0, 0.0, 1.0], velocities=[0.0, 0.0, 0.0], time_from_start = rospy.Duration(secs = 2)))
+    points.append(JointTrajectoryPoint(positions = [1.0, 0.7, 2.0], velocities=[0.0, 0.0, 0.0], time_from_start = rospy.Duration(secs = 4)))
+    points.append(JointTrajectoryPoint(positions = [1.0, 0.7, 2.0], velocities=[0.0, 0.0, 0.0], time_from_start = rospy.Duration(secs = 5)))
+    points.append(JointTrajectoryPoint(positions = [1.0, 0.3, 2.0], velocities=[0.0, 0.0, 0.0], time_from_start = rospy.Duration(secs = 7)))
+    points.append(JointTrajectoryPoint(positions = [2.0, 0.3, 2.0], velocities=[0.0, 0.0, 0.0], time_from_start = rospy.Duration(secs = 9)))
+    points.append(JointTrajectoryPoint(positions = [2.0, 0.7, 2.0], velocities=[0.0, 0.0, 0.0], time_from_start = rospy.Duration(secs = 11)))
+    points.append(JointTrajectoryPoint(positions = [2.0, 0.7, 2.0], velocities=[0.0, 0.0, 0.0], time_from_start = rospy.Duration(secs = 12)))
+    points.append(JointTrajectoryPoint(positions = [2.0, 0.3, 2.0], velocities=[0.0, 0.0, 0.0], time_from_start = rospy.Duration(secs = 14)))
+    points.append(JointTrajectoryPoint(positions = [0.0, 0.0, 0.0], velocities=[0.0, 0.0, 0.0], time_from_start = rospy.Duration(secs = 18)))
+
     trajectory.points = points
 
     goal.trajectory = trajectory
-    action_goal.goal = goal
 
     client.send_goal(goal, feedback_cb = feedback_cb, done_cb = done_cb)
     client.wait_for_result()
@@ -88,8 +90,3 @@ if __name__ == '__main__':
         action_trajectory()
     except rospy.ROSInterruptException:
         pass
-
-# TODO
-# Split the points into different trajectories or research alternatives
-# Convert other joints to trajectory controllers
-# Get another URDF file for testing

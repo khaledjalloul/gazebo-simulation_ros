@@ -6,20 +6,18 @@ ros_control_tester:
 
 # Defining joint controllers
 # Effort controllers can only control one joint.
-  joint1_position_controller:
-    type: effort_controllers/JointPositionController
-    joint: toe_foot_joint
-    pid: {p: 100.0, i: 0.0, d: 10.0}
-
-  joint2_position_controller:
-    type: effort_controllers/JointPositionController
-    joint: foot_leg_joint
-    pid: {p: 100.0, i: 0.0, d: 10.0}
-      
-  joint3_trajectory_controller:
+  joints_trajectory_controller:
     type: effort_controllers/JointTrajectoryController
     joints:
-      - leg_arm_joint
+        - toe_foot_joint
+        - foot_leg_joint
+        - leg_arm_joint
     gains:
-      leg_arm_joint: {p: 1000.0, i: 0.0, d: 10.0}
-    allow_partial_joints_goal: true
+      toe_foot_joint: {p: 200.0, i: 0.0, d: 0.0}
+      foot_leg_joint: {p: 100.0, i: 0.0, d: 1.0}
+      leg_arm_joint: {p: 100.0, i: 0.0, d: 0.0}
+
+# Increasing p means reach target faster but with higher overshoot
+# With p = 50 for the toe_foot_joint, the robot arm would wobble when moving but whith p = 1000 it would violently shake at the start
+# Adding a d value for toe_foot_joint makes it wobble on start
+# Removing d value from foot_leg_joint makes it wobble
