@@ -1,4 +1,7 @@
 <launch>
+
+    <rosparam command='load' file='$(find multimove)/include/params.yaml' />
+    
     <!-- Launching Gazebo -->
     <include file="$(find gazebo_ros)/launch/empty_world.launch">
         <arg name="world_name" value="$(find robot_description)/worlds/empty.world"/>
@@ -26,7 +29,7 @@
         <remap from='/joint_states' to='/arm_robot/joint_states' />
     </node>
 
-    <!-- Launch a Python file that sends data to the controllers -->
+    <!-- Launch a Python file that sends data to the controllers
     <node name='ros_control_python_publisher' pkg='robot_control' type='control.py' />
-
+    -->
 </launch>

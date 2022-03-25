@@ -1,0 +1,15 @@
+multimove_simulation:
+  start:
+    joint1: False
+    joint2: False
+    joint3: False
+    joint4: False
+    joint51: False
+    joint52: False
+  finished:
+    joint1: False
+    joint2: False
+    joint3: False
+    joint4: False
+    joint51: False
+    joint52: False
