@@ -1,0 +1,32 @@
+<launch>
+    <!-- Launching Gazebo -->
+    <include file="$(find gazebo_ros)/launch/empty_world.launch">
+        <arg name="world_name" value="$(find robot_description)/worlds/empty.world"/>
+        <arg name="paused" value="false"/>
+        <arg name="use_sim_time" value="true"/>
+        <arg name="gui" value="true"/>
+        <arg name="recording" value="false"/>
+        <arg name="debug" value="false"/>
+    </include>
+    <!-- Loading URDF model into robot_description parameter -->
+    <param name="robot_description" command="cat $(find robot_description)/urdf/tu_nguyen.urdf" />
+
+    <!-- Spawning model in Gazebo -->
+    <node name="spawn_urdf" pkg="gazebo_ros" type="spawn_model" args="-param robot_description -urdf -model arm_robot -x 0 -y 0 -z 0" output="screen" />  
+     
+    <!-- Storing the controller properties from a yaml file to a ROS parameter -->
+    <rosparam command="load" file='$(find robot_control)/config/config.yaml'/>
+
+    <!-- Spawning the controllers based on the yaml file -->
+    <node name='controller_spawner' pkg='controller_manager' type='spawner' respawn='false' output='screen' ns='/arm_robot'
+        args='joint_state_controller effort_joints_controller position_joints_controller' />
+
+    <!-- Spawning a node that publishes the current robot joints' states -->
+    <node name='robot_state_publisher' pkg='robot_state_publisher' type='robot_state_publisher' respawn='false' output='screen'>
+        <remap from='/joint_states' to='/arm_robot/joint_states' />
+    </node>
+
+    <!-- Launch a Python file that sends data to the controllers -->
+    <node name='ros_control_python_publisher' pkg='robot_control' type='control.py' />
+
+</launch>

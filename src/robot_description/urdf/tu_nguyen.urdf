@@ -2,6 +2,12 @@
 
 <robot name="tu_nguyen">
 
+  <gazebo>
+    <plugin filename="libgazebo_ros_control.so" name="gazebo_ros_control">
+      <robotNamespace>arm_robot</robotNamespace>
+    </plugin>
+  </gazebo>
+
   <link name="base_link">
     <inertial>
       <origin xyz="0.00078394 -0.00078007 0.036251" rpy="0 0 0" />
@@ -26,8 +32,15 @@
   </link>
 
   <gazebo reference="base_link">
-    <material>Gazebo/Grey</material>
+    <material>Gazebo/Yellow</material>
   </gazebo>
+
+  <link name="world"/>
+  
+  <joint name="world_base_joint" type="fixed">
+    <parent link="world"/>
+    <child link="base_link"/>
+  </joint>
 
   <link name="link_1">
     <inertial>
@@ -53,7 +66,7 @@
   </link>
 
   <gazebo reference="link_1">
-    <material>Gazebo/Blue</material>
+    <material>Gazebo/Grey</material>
   </gazebo>
 
   <joint name="joint_1" type="revolute">
@@ -61,8 +74,19 @@
     <parent link="base_link" />
     <child link="link_1" />
     <axis xyz="0 0 1" />
-    <limit lower="-1.708" upper="1.708" effort="300" velocity="1" />
+    <limit lower="-3.14" upper="3.14" effort="300" velocity="1" />
   </joint>
+
+  <transmission name='trans_1'>
+    <type>transmission_interface/SimpleTransmission</type>
+    <joint name='joint_1'>
+      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+    </joint>
+    <actuator name='actuator_1'>
+      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+      <mechanicalReduction>1</mechanicalReduction>
+    </actuator>
+  </transmission>
 
   <link name="link_2">
     <inertial>
@@ -99,6 +123,17 @@
     <limit lower="-1.708" upper="1.708" effort="300" velocity="1" />
   </joint>
 
+  <transmission name='trans_2'>
+    <type>transmission_interface/SimpleTransmission</type>
+    <joint name='joint_2'>
+      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+    </joint>
+    <actuator name='actuator_2'>
+      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+      <mechanicalReduction>1</mechanicalReduction>
+    </actuator>
+  </transmission>
+
   <link name="link_3">
     <inertial>
       <origin xyz="-3.96617753665222E-06 0.0291072422360279 0.0569268959166495" rpy="0 0 0" />
@@ -131,8 +166,19 @@
     <parent link="link_2" />
     <child link="link_3" />
     <axis xyz="0 1 0" />
-    <limit lower="-1.708" upper="1.708" effort="300" velocity="1" />
+    <limit lower="-3.14" upper="1.708" effort="300" velocity="1" />
   </joint>
+
+  <transmission name='trans_3'>
+    <type>transmission_interface/SimpleTransmission</type>
+    <joint name='joint_3'>
+      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+    </joint>
+    <actuator name='actuator_3'>
+      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+      <mechanicalReduction>1</mechanicalReduction>
+    </actuator>
+  </transmission>
 
   <link name="link_4">
     <inertial>
@@ -166,8 +212,19 @@
     <parent link="link_3" />
     <child link="link_4" />
     <axis xyz="0 1 0" />
-    <limit lower="-1.708" upper="1.708" effort="300" velocity="1" />
+    <limit lower="-3.14" upper="3.14" effort="300" velocity="1" />
   </joint>
+
+  <transmission name='trans_4'>
+    <type>transmission_interface/SimpleTransmission</type>
+    <joint name='joint_4'>
+      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+    </joint>
+    <actuator name='actuator_4'>
+      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+      <mechanicalReduction>1</mechanicalReduction>
+    </actuator>
+  </transmission>
 
   <link name="link_51">
     <inertial>
@@ -204,6 +261,17 @@
     <limit lower="0" upper="0.4" effort="300" velocity="1" />
   </joint>
 
+  <transmission name='trans_51'>
+    <type>transmission_interface/SimpleTransmission</type>
+    <joint name='joint_51'>
+      <hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
+    </joint>
+    <actuator name='actuator_51'>
+      <hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
+      <mechanicalReduction>1</mechanicalReduction>
+    </actuator>
+  </transmission>
+
   <link name="link_52">
     <inertial>
       <origin xyz="0.00150001214059608 0.00290820241921078 0.0342746337461361" rpy="0 0 0" />
@@ -239,4 +307,14 @@
     <limit lower="-0.4" upper="0" effort="300" velocity="1" />
   </joint>
 
+  <transmission name='trans_52'>
+    <type>transmission_interface/SimpleTransmission</type>
+    <joint name='joint_52'>
+      <hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
+    </joint>
+    <actuator name='actuator_52'>
+      <hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
+      <mechanicalReduction>1</mechanicalReduction>
+    </actuator>
+  </transmission>
 </robot>

@@ -1,92 +1,76 @@
 #!/usr/bin/env python3
 import rospy
 import actionlib
-import math
 
-from std_msgs.msg import Float64
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 from std_msgs.msg import Header
-from control_msgs.msg import FollowJointTrajectoryAction, FollowJointTrajectoryActionGoal, FollowJointTrajectoryGoal
+from control_msgs.msg import FollowJointTrajectoryAction, FollowJointTrajectoryGoal
 
-def joint(num):
-    return f'/ros_control_tester/joint{num}_position_controller/command'
+class ArmControl():
 
-def publish():
-    pub1 = rospy.Publisher(joint(1), Float64, queue_size=10)
-    pub2 = rospy.Publisher(joint(2), Float64, queue_size=10)
-    pub3 = rospy.Publisher(joint(3), Float64, queue_size=10)
-    r = rospy.Rate(20)
-    i = 0.0
-    
-    while not rospy.is_shutdown():
-        pub1.publish(math.sin(i))
-        pub2.publish(-0.7)
-        pub3.publish(math.sin(i))
-        i += 0.05
-        r.sleep()
+    def __init__(self):
+        self.arm_client = actionlib.SimpleActionClient('/arm_robot/effort_joints_controller/follow_joint_trajectory', FollowJointTrajectoryAction)
+        self.grip_client = actionlib.SimpleActionClient('/arm_robot/position_joints_controller/follow_joint_trajectory', FollowJointTrajectoryAction)
 
-def topic_trajectory():
-    pub = rospy.Publisher('/ros_control_tester/joint3_trajectory_controller/command', JointTrajectory, queue_size=10)
+    def feedback_cb(self, feedback):
+        rospy.loginfo(feedback)
 
-    trajectory = JointTrajectory()
+    def done_cb(self, state, result):
+        rospy.loginfo('result')
+        rospy.loginfo(result)
 
-    trajectory.header = Header(stamp = rospy.Time.now())
-    trajectory.joint_names = ['leg_arm_joint']
+    def move(self, trajectories):
 
-    points = []
-    points.append(JointTrajectoryPoint(positions = [0.0], velocities = [1.0], time_from_start = rospy.Duration(secs = 1)))
-    points.append(JointTrajectoryPoint(positions = [1.0], velocities = [1.0], time_from_start = rospy.Duration(secs = 3)))
-    points.append(JointTrajectoryPoint(positions = [1.5], velocities = [1.0], time_from_start = rospy.Duration(secs = 5)))
-    points.append(JointTrajectoryPoint(positions = [2.5], velocities = [1.0], time_from_start = rospy.Duration(secs = 7)))
-    trajectory.points = points
+        self.arm_client.wait_for_server()
+        self.grip_client.wait_for_server()
 
-    while pub.get_num_connections() < 1:
-        pass
-    
-    pub.publish(trajectory)
+        arm_goal = FollowJointTrajectoryGoal()
+        grip_goal = FollowJointTrajectoryGoal()
+
+        arm_trajectory = JointTrajectory(header = Header(stamp = rospy.Time.now()))
+        grip_trajectory = JointTrajectory(header = Header(stamp = rospy.Time.now()))
+        
+        arm_trajectory.joint_names = ['joint_1', 'joint_2', 'joint_3', 'joint_4']
+        grip_trajectory.joint_names = ['joint_51', 'joint_52']
+
+        velocities = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+        speed = 1
+
+        for i, trajectory in enumerate(trajectories):
+
+            arm_trajectory.points.append(JointTrajectoryPoint(positions = trajectory[:4], velocities = velocities[:4], time_from_start = rospy.Duration(secs = (i+1) * speed)))
+            grip_trajectory.points.append(JointTrajectoryPoint(positions = trajectory[4:6], velocities = velocities[4:6], time_from_start = rospy.Duration(secs = (i+1) * speed)))
 
 
-def feedback_cb(feedback):
-    rospy.loginfo(feedback)
+        arm_goal.trajectory = arm_trajectory
+        grip_goal.trajectory = grip_trajectory
 
-def done_cb(state, result):
-    rospy.loginfo('result')
-    rospy.loginfo(result)
+        self.arm_client.send_goal(arm_goal, feedback_cb = self.feedback_cb, done_cb = self.done_cb)
+        self.grip_client.send_goal(grip_goal, feedback_cb = self.feedback_cb, done_cb = self.done_cb)
 
-def action_trajectory():
-
-    client = actionlib.SimpleActionClient('/ros_control_tester/joints_trajectory_controller/follow_joint_trajectory', FollowJointTrajectoryAction)
-    client.wait_for_server()
-
-    goal = FollowJointTrajectoryGoal()
-
-    trajectory = JointTrajectory()
-
-    trajectory.header = Header(stamp = rospy.Time.now())
-    trajectory.joint_names = ['toe_foot_joint', 'foot_leg_joint', 'leg_arm_joint']
-
-    points = []
-    points.append(JointTrajectoryPoint(positions = [1.0, 0.0, 1.0], velocities=[0.0, 0.0, 0.0], time_from_start = rospy.Duration(secs = 2)))
-    points.append(JointTrajectoryPoint(positions = [1.0, 0.7, 2.0], velocities=[0.0, 0.0, 0.0], time_from_start = rospy.Duration(secs = 4)))
-    points.append(JointTrajectoryPoint(positions = [1.0, 0.7, 2.0], velocities=[0.0, 0.0, 0.0], time_from_start = rospy.Duration(secs = 5)))
-    points.append(JointTrajectoryPoint(positions = [1.0, 0.3, 2.0], velocities=[0.0, 0.0, 0.0], time_from_start = rospy.Duration(secs = 7)))
-    points.append(JointTrajectoryPoint(positions = [2.0, 0.3, 2.0], velocities=[0.0, 0.0, 0.0], time_from_start = rospy.Duration(secs = 9)))
-    points.append(JointTrajectoryPoint(positions = [2.0, 0.7, 2.0], velocities=[0.0, 0.0, 0.0], time_from_start = rospy.Duration(secs = 11)))
-    points.append(JointTrajectoryPoint(positions = [2.0, 0.7, 2.0], velocities=[0.0, 0.0, 0.0], time_from_start = rospy.Duration(secs = 12)))
-    points.append(JointTrajectoryPoint(positions = [2.0, 0.3, 2.0], velocities=[0.0, 0.0, 0.0], time_from_start = rospy.Duration(secs = 14)))
-    points.append(JointTrajectoryPoint(positions = [0.0, 0.0, 0.0], velocities=[0.0, 0.0, 0.0], time_from_start = rospy.Duration(secs = 18)))
-
-    trajectory.points = points
-
-    goal.trajectory = trajectory
-
-    client.send_goal(goal, feedback_cb = feedback_cb, done_cb = done_cb)
-    client.wait_for_result()
+        self.arm_client.wait_for_result()
+        self.grip_client.wait_for_result()
 
 if __name__ == '__main__':
+
     try:
         rospy.init_node('ros_control_python_publisher')
-        # publish()
-        action_trajectory()
+        
+        control = ArmControl()
+
+        control.move([[2, 0.3, -1.0, -1.4, 0.0, 0.0]])
+
+        while not rospy.is_shutdown():
+            control.move([
+                [2.0, 0, -1.5, -1.4, 0.4, -0.4],
+                [2.0, 0, -1.5, -1.4, 0.1, -0.1],
+                [2.0, 0.3, -1.0, -1.4, 0.1, -0.1],
+                [2.8, 0.3, -1.0, -1.4, 0.1, -0.1],
+                [2.8, -0.8, -0.5, -1.5, 0.1, -0.1],
+                [2.8, -0.8, -0.5, -1.5, 0.4, -0.4],
+                [2.8, 0.3, -1.0, -1.4, 0.0, 0.0],
+                [2, 0.3, -1.0, -1.4, 0.0, 0.0]
+            ])
+        
     except rospy.ROSInterruptException:
         pass
