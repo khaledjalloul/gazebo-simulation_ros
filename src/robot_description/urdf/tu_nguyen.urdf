@@ -253,7 +253,7 @@
     <material>Gazebo/Blue</material>
   </gazebo>
   
-  <joint name="joint_51" type="revolute">
+  <joint name="joint_5" type="revolute">
     <origin xyz="0.0015 0.0096756 0.07625" rpy="0 0 0" />
     <parent link="link_4" />
     <child link="link_51" />
@@ -263,7 +263,7 @@
 
   <transmission name='trans_51'>
     <type>transmission_interface/SimpleTransmission</type>
-    <joint name='joint_51'>
+    <joint name='joint_5'>
       <hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
     </joint>
     <actuator name='actuator_51'>
@@ -299,7 +299,7 @@
     <material>Gazebo/Blue</material>
   </gazebo>
 
-  <joint name="joint_52" type="revolute">
+  <joint name="joint_6" type="revolute">
     <origin xyz="0.0015 0.036676 0.07625" rpy="0 0 0" />
     <parent link="link_4" />
     <child link="link_52" />
@@ -309,7 +309,7 @@
 
   <transmission name='trans_52'>
     <type>transmission_interface/SimpleTransmission</type>
-    <joint name='joint_52'>
+    <joint name='joint_6'>
       <hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
     </joint>
     <actuator name='actuator_52'>

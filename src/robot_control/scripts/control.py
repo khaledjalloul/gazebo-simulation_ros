@@ -31,7 +31,7 @@ class ArmControl():
         grip_trajectory = JointTrajectory(header = Header(stamp = rospy.Time.now()))
         
         arm_trajectory.joint_names = ['joint_1', 'joint_2', 'joint_3', 'joint_4']
-        grip_trajectory.joint_names = ['joint_51', 'joint_52']
+        grip_trajectory.joint_names = ['joint_5', 'joint_6']
 
         velocities = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
         speed = 1
