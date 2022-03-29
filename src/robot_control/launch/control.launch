@@ -5,7 +5,7 @@
     <!-- Launching Gazebo -->
     <include file="$(find gazebo_ros)/launch/empty_world.launch">
         <arg name="world_name" value="$(find robot_description)/worlds/empty.world"/>
-        <arg name="paused" value="false"/>
+        <arg name="paused" value="true"/>
         <arg name="use_sim_time" value="true"/>
         <arg name="gui" value="true"/>
         <arg name="recording" value="false"/>
@@ -15,7 +15,14 @@
     <param name="robot_description" command="cat $(find robot_description)/urdf/tu_nguyen.urdf" />
 
     <!-- Spawning model in Gazebo -->
-    <node name="spawn_urdf" pkg="gazebo_ros" type="spawn_model" args="-param robot_description -urdf -model arm_robot -x 0 -y 0 -z 0" output="screen" />  
+    <node name="spawn_urdf" pkg="gazebo_ros" type="spawn_model" args="-param robot_description -urdf -model arm_robot -x 0 -y 0 -z 0
+                                                                -J arm_robot::joint_1 0
+                                                                -J arm_robot::joint_2 0
+                                                                -J arm_robot::joint_3 0
+                                                                -J arm_robot::joint_4 0
+                                                                -J arm_robot::joint_5 0.01
+                                                                -J arm_robot::joint_6 -0.01
+                                                                -unpause" output="screen" />  
      
     <!-- Storing the controller properties from a yaml file to a ROS parameter -->
     <rosparam command="load" file='$(find robot_control)/config/config.yaml'/>

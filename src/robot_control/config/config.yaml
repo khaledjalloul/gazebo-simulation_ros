@@ -9,40 +9,39 @@ arm_robot:
       - joint_1
     gains:
       joint_1: {p: 150.0, i: 0.0, d: 0.0}
-
+    
   joint_2_controller:
     type: effort_controllers/JointTrajectoryController
     joints:
       - joint_2
     gains:
       joint_2: {p: 150.0, i: 0.0, d: 0.0}
-
-
+    
   joint_3_controller:
     type: effort_controllers/JointTrajectoryController
     joints:
       - joint_3
     gains:
       joint_3: {p: 150.0, i: 0.0, d: 0.0}
-
-
+    
   joint_4_controller:
     type: effort_controllers/JointTrajectoryController
     joints:
       - joint_4
     gains:
       joint_4: {p: 50.0, i: 0.0, d: 0.0}
-
+    
   joint_5_controller:
     type: position_controllers/JointTrajectoryController
     joints:
       - joint_5
     gains:
       joint_5: {p: 150.0, i: 0.0, d: 0.0}
-
+    
   joint_6_controller:
     type: position_controllers/JointTrajectoryController
     joints:
       - joint_6
     gains:
       joint_6: {p: 150.0, i: 0.0, d: 0.0}
+    

@@ -14,24 +14,17 @@ from multimove.msg import joints_status
 class PrepareStates(smach.State):
 
     def __init__(self):
-        smach.State.__init__(self, outcomes = ['success'], output_keys = ['poses', 'time', 'deps'])
+        smach.State.__init__(self, outcomes = ['success'], output_keys = ['joints', 'time'])
         
     def execute(self, userdata):
 
-        userdata.poses = {'joint_1': 2.0,
-                        'joint_2': 0,
-                        'joint_3': -1.5,
-                        'joint_4': -1.4,
-                        'joint_5': 0.1,
-                        'joint_6': -0.1
-                        }
-
-        userdata.deps = {'joint_1': None,
-                        'joint_2': None,
-                        'joint_3': {'joint': 'joint_1', 'percentage': 30},
-                        'joint_4': {'joint': 'joint_1', 'percentage': 30},
-                        'joint_5': {'joint': 'joint_1', 'percentage': 70},
-                        'joint_6': {'joint': 'joint_1', 'percentage': 70}
+        userdata.joints = {
+                        'joint_1': {'target': 3.0, 'dependency': None},
+                        'joint_2': {'target': 0.0, 'dependency': None},
+                        'joint_3': {'target': -1.8, 'dependency': {'joint': 'joint_1', 'percentage': 20}},
+                        'joint_4': {'target': -1.2, 'dependency': {'joint': 'joint_1', 'percentage': 20}},
+                        'joint_5': {'target': 0.2, 'dependency': {'joint': 'joint_4', 'percentage': 60}},
+                        'joint_6': {'target': -0.2, 'dependency': {'joint': 'joint_4', 'percentage': 60}},
                         }
                     
         userdata.time = 5.0
@@ -42,13 +35,12 @@ class PrepareStates(smach.State):
         while time.time() < timeout:
             status_pub.publish(joints_status())
 
-        rospy.set_param('/multimove_simulation/start/joint_3', True)
         return 'success'
 
 class Client(smach.State):
 
     def __init__(self, order):
-        smach.State.__init__(self, outcomes = ['success', 'failure'], input_keys=['poses', 'time'])
+        smach.State.__init__(self, outcomes = ['success', 'failure'], input_keys=['joints', 'time'])
         self.name = "Client" + str(order + 1)
         self.order = order
         
@@ -72,11 +64,10 @@ class Client(smach.State):
 
         trajectory = JointTrajectory(header = Header(stamp = rospy.Time.now()), joint_names = [f'joint_{self.order}'])
         
-        # poses = [userdata.poses[self.order - 1] * math.pi / 180]
-        poses = [userdata.poses[self.order - 1]]
+        targets = [userdata.joints[f'joint_{self.order}']['target']]
         velocities = [0.0]
 
-        trajectory.points.append(JointTrajectoryPoint(positions = poses, velocities = velocities, time_from_start = rospy.Duration(secs = userdata.time)))
+        trajectory.points.append(JointTrajectoryPoint(positions = targets, velocities = velocities, time_from_start = rospy.Duration(secs = userdata.time)))
 
         goal.trajectory = trajectory
 
@@ -92,7 +83,7 @@ class Client(smach.State):
 class MonitorClient(smach.State):
     
     def __init__(self):
-        smach.State.__init__(self, outcomes = ['success'],  input_keys=['poses', 'deps'])
+        smach.State.__init__(self, outcomes = ['success'],  input_keys=['joints'])
         self.positions = {'joint_1': 0, 'joint_2': 0, 'joint_3': 0, 'joint_4': 0, 'joint_5': 0, 'joint_6': 0}
 
     def position_cb(self, data):
@@ -100,21 +91,25 @@ class MonitorClient(smach.State):
             self.positions[data.name[i]] = data.position[i]
 
     def execute(self, userdata):
-        #while not (rospy.get_param('Client1_finished') and rospy.get_param('Client2_finished') and rospy.get_param("Client3_finished")):
-        #    if rospy.get_param('Client1_status') > 0.3 and not rospy.get_param('Client2_start'):
-        #        rospy.set_param('Client2_start', True)
-        #    if rospy.get_param('Client1_status') > 0.7 and not rospy.get_param('Client3_start'):
-        #        rospy.set_param('Client3_start', True)
-        percs = userdata.percs
-        targets = userdata.poses
 
-        rospy.loginfo(self.positions)
+        joints = userdata.joints
+        
         rospy.Subscriber('/arm_robot/joint_states', JointState, self.position_cb)
+
         while not self.preempt_requested():
-            for i in range(len(targets)):
-                if (rospy.get_param(f'/multimove_research/start/joint_{i}') == False):
-                    if (percs[i] == 0):
-                        rospy.set_param(f'/multimove_research/start/joint_{i}', True)
+            for joint, data in joints.items():
+                if (rospy.get_param(f'/multimove_simulation/start/{joint}') == False):
+                    if data['dependency'] == None:
+                        rospy.loginfo('Starting {joint}')
+                        rospy.set_param(f'/multimove_simulation/start/{joint}', True)
+                    else:
+                        dependency_joint = data['dependency']['joint']
+                        dependency_joint_target = joints[dependency_joint]['target']
+                        dependency_perc = data['dependency']['percentage']
+                        if abs(self.positions[dependency_joint]) > abs(dependency_perc * dependency_joint_target / 100):
+                            rospy.loginfo('Starting {joint}')
+                            rospy.set_param(f'/multimove_simulation/start/{joint}', True)
+
         rospy.loginfo(self.positions)
         return "success"
 
@@ -141,7 +136,7 @@ def main():
                                         default_outcome = 'failure',
                                         child_termination_cb = child_termination_cb,
                                         outcome_cb = outcome_cb,
-                                        input_keys = ['poses', 'time', 'deps'])
+                                        input_keys = ['joints', 'time'])
 
         with sm_concurrent:
             for i in range (6):
