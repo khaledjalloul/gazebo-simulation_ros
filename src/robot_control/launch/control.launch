@@ -37,5 +37,5 @@
     </node>
 
     <!-- Launch the state machine file that sends data to the controllers -->
-    <node name='smach_joints_controller' pkg='multimove' type='clients.py' output='screen' />
+    <node name="smach_joints_controller" pkg="multimove" type="clients.py" output='screen' launch-prefix="bash -c 'sleep 3.0; $0 $@' " />
 </launch>

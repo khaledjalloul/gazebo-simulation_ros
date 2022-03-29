@@ -6,10 +6,3 @@ multimove_simulation:
     joint_4: False
     joint_5: False
     joint_6: False
-  finished:
-    joint_1: False
-    joint_2: False
-    joint_3: False
-    joint_4: False
-    joint_5: False
-    joint_6: False

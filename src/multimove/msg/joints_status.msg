@@ -1,6 +1,6 @@
-float32 joint_1
-float32 joint_2
-float32 joint_3
-float32 joint_4
-float32 joint_5
-float32 joint_6
+bool joint_1
+bool joint_2
+bool joint_3
+bool joint_4
+bool joint_5
+bool joint_6
