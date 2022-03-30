@@ -8,7 +8,6 @@ from control_msgs.msg import FollowJointTrajectoryAction, FollowJointTrajectoryG
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 from std_msgs.msg import Header
 from sensor_msgs.msg import JointState
-from multimove.msg import joints_status
     
 class PrepareStates(smach.State):
 
@@ -22,25 +21,25 @@ class PrepareStates(smach.State):
                         'joint_2': {'target': 0.0, 'dependency': None},
                         'joint_3': {'target': -1.0, 'dependency': {'joint': 'joint_1', 'percentage': 40}},
                         'joint_4': {'target': -0.6, 'dependency': None},
-                        'joint_5': {'target': 0.3, 'dependency': {'joint': 'joint_4', 'percentage': 70}},
-                        'joint_6': {'target': -0.3, 'dependency': {'joint': 'joint_4', 'percentage': 70}},
+                        'joint_5': {'target': 0.3, 'dependency': {'joint': 'joint_3', 'percentage': 70}},
+                        'joint_6': {'target': -0.3, 'dependency': {'joint': 'joint_3', 'percentage': 70}},
                         }, 
                         {
                         'joint_1': {'target': 2.0, 'dependency': None},
                         'joint_2': {'target': 0.5, 'dependency': {'joint': 'joint_1', 'percentage': 40}},
                         'joint_3': {'target': -0.6, 'dependency': None},
                         'joint_4': {'target': -0.8, 'dependency': {'joint': 'joint_2', 'percentage': 30}},
-                        'joint_5': {'target': 0.01, 'dependency': {'joint': 'joint_4', 'percentage': 70}},
-                        'joint_6': {'target': -0.01, 'dependency': {'joint': 'joint_4', 'percentage': 70}},
+                        'joint_5': {'target': 0.01, 'dependency': {'joint': 'joint_3', 'percentage': 40}},
+                        'joint_6': {'target': -0.01, 'dependency': {'joint': 'joint_3', 'percentage': 40}},
                         },
                         {
                         'joint_1': {'target': 3.0, 'dependency': None},
                         'joint_2': {'target': 0.0, 'dependency': None},
                         'joint_3': {'target': -1.4, 'dependency': None},
                         'joint_4': {'target': -1.0, 'dependency': {'joint': 'joint_1', 'percentage': 30}},
-                        'joint_5': {'target': 0.3, 'dependency': {'joint': 'joint_4', 'percentage': 70}},
-                        'joint_6': {'target': -0.3, 'dependency': {'joint': 'joint_4', 'percentage': 70}},
-                        }
+                        'joint_5': {'target': 0.3, 'dependency': {'joint': 'joint_3', 'percentage': 50}},
+                        'joint_6': {'target': -0.3, 'dependency': {'joint': 'joint_3', 'percentage': 50}},
+                        },
                     ]
 
         return 'success'
@@ -69,7 +68,7 @@ class Client(smach.State):
 
     def __init__(self, order):
         smach.State.__init__(self, outcomes = ['success', 'failure'], input_keys=['trajectory'], output_keys=['trajectory'])
-        self.name = "Client" + str(order + 1)
+        self.name = "Client" + str(order)
         self.order = order
         
         self.client = actionlib.SimpleActionClient(f'/arm_robot/joint_{order}_controller/follow_joint_trajectory', FollowJointTrajectoryAction)
@@ -94,7 +93,7 @@ class Client(smach.State):
         targets = [current_path[f'joint_{self.order}']['target']]
         velocities = [0.0]
 
-        trajectory.points.append(JointTrajectoryPoint(positions = targets, velocities = velocities, time_from_start = rospy.Duration(secs = 3)))
+        trajectory.points.append(JointTrajectoryPoint(positions = targets, velocities = velocities, time_from_start = rospy.Duration.from_sec(5)))
 
         goal.trajectory = trajectory
 
@@ -112,6 +111,7 @@ class MonitorClient(smach.State):
     def __init__(self):
         smach.State.__init__(self, outcomes = ['success', 'preempted'],  input_keys=['trajectory'])
         self.positions = {'joint_1': 0, 'joint_2': 0, 'joint_3': 0, 'joint_4': 0, 'joint_5': 0, 'joint_6': 0}
+        self.prevPositions = {'joint_1': 0, 'joint_2': 0, 'joint_3': 0, 'joint_4': 0, 'joint_5': 0, 'joint_6': 0}
 
     def position_cb(self, data):
         for i in range(len(data.name)):
@@ -126,15 +126,20 @@ class MonitorClient(smach.State):
             if (rospy.get_param(f'/multimove_simulation/start/{joint}') == False):
                 if data['dependency'] == None:
                     rospy.loginfo(f'Starting {joint}')
+                    self.prevPositions[joint] = self.positions[joint]
                     rospy.set_param(f'/multimove_simulation/start/{joint}', True)
+
                 else:
                     dependency_joint = data['dependency']['joint']
-                    dependency_joint_target = trajectory[dependency_joint]['target']
-                    dependency_perc = data['dependency']['percentage']
-                    if abs(self.positions[dependency_joint]) > abs(dependency_perc * dependency_joint_target / 100):
-                        rospy.loginfo(f'Starting {joint}')
-                        rospy.set_param(f'/multimove_simulation/start/{joint}', True)
-        rospy.sleep(0.5)
+                    if rospy.get_param(f'/multimove_simulation/start/{dependency_joint}'): # Wait until the dependency joint starts before monitoring it
+                        dependency_joint_target = trajectory[dependency_joint]['target']
+                        dependency_perc = data['dependency']['percentage']
+
+                        if abs(self.positions[dependency_joint] - self.prevPositions[dependency_joint]) > abs(dependency_perc * (dependency_joint_target - self.prevPositions[dependency_joint]) / 100):
+                            rospy.loginfo(f'Starting {joint}')
+                            self.prevPositions[joint] = self.positions[joint]
+                            rospy.set_param(f'/multimove_simulation/start/{joint}', True)
+        rospy.sleep(0.2)
 
         if self.preempt_requested():
             self.service_preempt()

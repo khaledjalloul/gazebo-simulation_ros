@@ -8,21 +8,22 @@
         <arg name="paused" value="true"/>
         <arg name="use_sim_time" value="true"/>
         <arg name="gui" value="true"/>
-        <arg name="recording" value="false"/>
+        <arg name="recording" value="true"/>
         <arg name="debug" value="false"/>
     </include>
+    
     <!-- Loading URDF model into robot_description parameter -->
     <param name="robot_description" command="cat $(find robot_description)/urdf/tu_nguyen.urdf" />
 
     <!-- Spawning model in Gazebo -->
     <node name="spawn_urdf" pkg="gazebo_ros" type="spawn_model" args="-param robot_description -urdf -model arm_robot -x 0 -y 0 -z 0
-                                                                -J arm_robot::joint_1 0
-                                                                -J arm_robot::joint_2 0
-                                                                -J arm_robot::joint_3 0
-                                                                -J arm_robot::joint_4 0
-                                                                -J arm_robot::joint_5 0.01
-                                                                -J arm_robot::joint_6 -0.01
-                                                                -unpause" output="screen" />  
+                                                                                                            -J arm_robot::joint_1 0
+                                                                                                            -J arm_robot::joint_2 0
+                                                                                                            -J arm_robot::joint_3 0
+                                                                                                            -J arm_robot::joint_4 0
+                                                                                                            -J arm_robot::joint_5 0.01
+                                                                                                            -J arm_robot::joint_6 -0.01
+                                                                                                            -unpause" output="screen" />  
      
     <!-- Storing the controller properties from a yaml file to a ROS parameter -->
     <rosparam command="load" file='$(find robot_control)/config/config.yaml'/>
@@ -37,5 +38,5 @@
     </node>
 
     <!-- Launch the state machine file that sends data to the controllers -->
-    <node name="smach_joints_controller" pkg="multimove" type="clients.py" output='screen' launch-prefix="bash -c 'sleep 3.0; $0 $@' " />
+    <node name="smach_joints_controller" pkg="multimove" type="clients.py" output='screen' launch-prefix="bash -c 'read; $0 $@' "/>
 </launch>
