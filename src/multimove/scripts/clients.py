@@ -145,12 +145,18 @@ class Client(smach.State):
             duration = rospy.Duration.from_sec(default_duration)
 
         while not rospy.get_param(f'/multimove_simulation/start/joint_{self.order}'):
-            pass
+            if self.preempt_requested():
+                self.service_preempt()
+                return 'preempted'
 
         goal = FollowJointTrajectoryGoal()
         trajectory = JointTrajectory(header = Header(stamp = rospy.Time.now()), joint_names = [f'joint_{self.order}'])
         trajectory.points.append(JointTrajectoryPoint(positions = positions, velocities = [0.0], time_from_start = duration))
         goal.trajectory = trajectory
+
+        if self.preempt_requested():
+            self.service_preempt()
+            return 'preempted'
 
         self.client.send_goal(goal, feedback_cb = self.feedback_cb, done_cb = self.done_cb)
 
@@ -193,9 +199,7 @@ class MonitorClient(smach.State):
                             dependency_joint_target = trajectory[dependency_joint][0]['target']
                             dependency_perc = dependency['percentage']
                             dependency_condition = abs(self.positions[dependency_joint] - self.prevPositions[dependency_joint]) > abs(dependency_perc * (dependency_joint_target - self.prevPositions[dependency_joint]) / 100)
-                            print(joint, "dep", dependency, dependency_condition, start_joint)
                             start_joint = start_joint and dependency_condition
-                            print(start_joint)
                             
                         else:
                             start_joint = False
