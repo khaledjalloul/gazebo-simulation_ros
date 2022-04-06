@@ -1,10 +1,7 @@
 #!/usr/bin/env python3
-from typing import Mapping
-from genpy import Duration
 import rospy
 import actionlib
 import smach
-import time
 from control_msgs.msg import FollowJointTrajectoryAction, FollowJointTrajectoryGoal
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 from std_msgs.msg import Header
@@ -22,37 +19,56 @@ class PrepareStates(smach.State):
         rospy.wait_for_service('/gazebo/unpause_physics')
         self.unpause_gazebo()
         
+        debug_reset = False # Debugging reset trajectory
+
+        if debug_reset:
+
+            userdata.trajectory = [{
+                            'joint_1': [{'target': 0.0, 'dependencies': [None]}],
+                            'joint_2': [{'target': 0.0, 'dependencies': [None]}],
+                            'joint_3': [{'target': 0.0, 'dependencies': [None]}],
+                            'joint_4': [{'target': 0.0, 'dependencies': [None]}],
+                            'joint_5': [{'target': 0.01, 'dependencies': [None]}],
+                            'joint_6': [{'target': -0.01, 'dependencies': [None]}],
+                            }, 
+                        ]
+
+            return 'success'
+
         userdata.trajectory = [{
-                        'joint_1':{'target': 1.0, 'dependency': None},
-                        'joint_2': {'target': 0.0, 'dependency': None},
-                        'joint_3': {'target': -1.0, 'dependency': {'joint': 'joint_1', 'percentage': 40}},
-                        'joint_4': {'target': -0.6, 'dependency': None},
-                        'joint_5': [
-                            {'target': 0.4, 'dependency': {'joint': 'joint_3', 'percentage': 35}, 'duration': 1.2},
-                            {'target': 0.01, 'dependency': None, 'duration': 1.2},
-                            {'target': 0.4, 'dependency': None, 'duration': 1.2}],
-                        'joint_6': [
-                            {'target': -0.4, 'dependency': {'joint': 'joint_3', 'percentage': 35}, 'duration': 1.2},
-                            {'target': -0.01, 'dependency': None, 'duration': 1.2},
-                            {'target': -0.4, 'dependency': None, 'duration': 1.2}],
-                        }, 
-                        {
-                        'joint_1': {'target': 2.0, 'dependency': None},
-                        'joint_2': {'target': 0.5, 'dependency': {'joint': 'joint_1', 'percentage': 40}, 'duration': 3.5},
-                        'joint_3': {'target': -0.6, 'dependency': None},
-                        'joint_4': {'target': -0.8, 'dependency': {'joint': 'joint_2', 'percentage': 30}, 'duration': 2.5},
-                        'joint_5': {'target': 0.01, 'dependency': {'joint': 'joint_3', 'percentage': 70}, 'duration': 1},
-                        'joint_6': {'target': -0.01, 'dependency': {'joint': 'joint_3', 'percentage': 70}, 'duration': 1},
-                        },
-                        {
-                        'joint_1': {'target': 3.0, 'dependency': None},
-                        'joint_2': {'target': 0.0, 'dependency': None},
-                        'joint_3': {'target': -1.4, 'dependency': None},
-                        'joint_4': {'target': -1.0, 'dependency': {'joint': 'joint_1', 'percentage': 30}},
-                        'joint_5': {'target': 0.3, 'dependency': {'joint': 'joint_3', 'percentage': 70}, 'duration': 1.5},
-                        'joint_6': {'target': -0.3, 'dependency': {'joint': 'joint_3', 'percentage': 70}, 'duration': 1.5},
-                        },
-                    ]
+
+                'joint_1': [{'target': 1.5, 'dependencies': [None]}],
+                'joint_2': [{'target': -0.6, 'dependencies': [{'joint': 'joint_1', 'percentage': 70}], 'duration': 3}],
+                'joint_3': [{'target': -0.9, 'dependencies': [None]}],
+                'joint_4': [{'target': -0.8, 'dependencies': [{'joint': 'joint_1', 'percentage': 20}]}],
+                'joint_5': [
+                    {'target': 0.35, 'dependencies': [{'joint': 'joint_1', 'percentage': 50}, {'joint': 'joint_2', 'percentage': 20}], 'duration': 1},
+                    {'target': 0.1, 'dependencies': [{'joint': 'joint_2', 'percentage': 60}], 'duration': 1.5}],
+                'joint_6': [
+                    {'target': -0.35, 'dependencies': [{'joint': 'joint_1', 'percentage': 50}, {'joint': 'joint_2', 'percentage': 20}], 'duration': 1},
+                    {'target': -0.1, 'dependencies': [{'joint': 'joint_2', 'percentage': 60}], 'duration': 1.5}],
+                }, 
+                {
+                'joint_1': [{'target': 2.7, 'dependencies': [None], 'duration': 4}],
+                'joint_2': [
+                    {'target': -0.3, 'dependencies': [None], 'duration': 1.5},
+                    {'target': -0.7, 'dependencies': [{'joint': 'joint_1', 'percentage': 60}], 'duration': 2}],
+                'joint_3': [
+                    {'target': -0.5, 'dependencies': [None], 'duration': 1.5},
+                    {'target': -1.0, 'dependencies': [{'joint': 'joint_1', 'percentage': 60}], 'duration': 2}],
+                'joint_4': [{'target': -0.8, 'dependencies': [None]}],
+                'joint_5': [{'target': 0.35, 'dependencies': [{'joint': 'joint_1', 'percentage': 90}, {'joint': 'joint_2', 'percentage': 70}], 'duration': 1}],
+                'joint_6': [{'target': -0.35, 'dependencies': [{'joint': 'joint_1', 'percentage': 90}, {'joint': 'joint_2', 'percentage': 70}], 'duration': 1}]
+                },
+                {
+                'joint_1': [{'target': 2, 'dependencies': [{'joint': 'joint_3', 'percentage': 50}], 'duration': 2.5}],
+                'joint_2': [{'target': -0.3, 'dependencies': [None], 'duration': 1.5}],
+                'joint_3': [{'target': -0.5, 'dependencies': [None], 'duration': 1.5}],
+                'joint_4': [{'target': -0.8, 'dependencies': [None]}],
+                'joint_5': [{'target': 0.01, 'dependencies': [{'joint': 'joint_1', 'percentage': 30}, {'joint': 'joint_2', 'percentage': 80}], 'duration': 1}],
+                'joint_6': [{'target': -0.01, 'dependencies': [{'joint': 'joint_1', 'percentage': 30}, {'joint': 'joint_2', 'percentage': 80}], 'duration': 1}]
+                }
+            ]
 
         return 'success'
 
@@ -63,7 +79,7 @@ class updateTotalTrajectory(smach.State):
         self.pause_gazebo = rospy.ServiceProxy('/gazebo/pause_physics', Empty)
 
     def execute(self, userdata):
-        
+
         if len(userdata.trajectory) == 1:
             rospy.wait_for_service('/gazebo/pause_physics')
             self.pause_gazebo()
@@ -72,9 +88,6 @@ class updateTotalTrajectory(smach.State):
         else:
             newTrajectory = userdata.trajectory[1:]
             userdata.trajectory = newTrajectory
-
-            for i in range(6):
-                rospy.set_param(f'/multimove_simulation/start/joint_{i+1}', False)
 
             return 'success'
         
@@ -88,6 +101,8 @@ class updateTrajectory(smach.State):
         current_path = userdata.trajectory[0]
         targets = current_path[f'joint_{self.order}']
 
+        rospy.set_param(f'/multimove_simulation/start/joint_{self.order}', False)
+
         if len(targets) == 1:
             return 'done'
 
@@ -99,7 +114,7 @@ class updateTrajectory(smach.State):
 class Client(smach.State):
 
     def __init__(self, order):
-        smach.State.__init__(self, outcomes = ['success', 'updateTrajectory'], input_keys=['trajectory'])
+        smach.State.__init__(self, outcomes = ['success'], input_keys=['trajectory'])
         self.name = "Client" + str(order)
         self.order = order
         
@@ -117,14 +132,13 @@ class Client(smach.State):
 
         self.client.wait_for_server()
 
-        default_duration = 5.0
-        targets = userdata.trajectory[0][f'joint_{self.order}']
+        rospy.set_param(f'/multimove_simulation/finished/joint_{self.order}', False)
 
-        if str(type(targets)) == "<class 'list'>":
-            target = targets[0]
-        else:
-            target = targets
-    
+        default_duration = 5.0
+        target = userdata.trajectory[0][f'joint_{self.order}'][0]
+
+        positions = [target['target']]
+
         try:
             duration = rospy.Duration.from_sec(target['duration'])
         except KeyError:
@@ -135,15 +149,14 @@ class Client(smach.State):
 
         goal = FollowJointTrajectoryGoal()
         trajectory = JointTrajectory(header = Header(stamp = rospy.Time.now()), joint_names = [f'joint_{self.order}'])
-        trajectory.points.append(JointTrajectoryPoint(positions = [target['target']], velocities = [0.0], time_from_start = duration))
+        trajectory.points.append(JointTrajectoryPoint(positions = positions, velocities = [0.0], time_from_start = duration))
         goal.trajectory = trajectory
 
         self.client.send_goal(goal, feedback_cb = self.feedback_cb, done_cb = self.done_cb)
 
         self.client.wait_for_result()
 
-        if str(type(targets)) == "<class 'list'>":
-            return 'updateTrajectory'
+        rospy.set_param(f'/multimove_simulation/finished/joint_{self.order}', True)
 
         return 'success'
 
@@ -164,24 +177,34 @@ class MonitorClient(smach.State):
         rospy.Subscriber('/arm_robot/joint_states', JointState, self.position_cb)
 
         for joint, data in trajectory.items():
-            if str(type(data)) == "<class 'list'>":
-                data = data[0]
-            if (rospy.get_param(f'/multimove_simulation/start/{joint}') == False):
-                if data['dependency'] == None:
+            data = data[0]
+            if (rospy.get_param(f'/multimove_simulation/start/{joint}') == False and rospy.get_param(f'/multimove_simulation/finished/{joint}') == False):
+                
+                if data['dependencies'] == [None]:
                     rospy.loginfo(f'Starting {joint}')
                     self.prevPositions[joint] = self.positions[joint]
                     rospy.set_param(f'/multimove_simulation/start/{joint}', True)
 
                 else:
-                    dependency_joint = data['dependency']['joint']
-                    if rospy.get_param(f'/multimove_simulation/start/{dependency_joint}'): # Wait until the dependency joint starts before monitoring it
-                        dependency_joint_target = trajectory[dependency_joint]['target']
-                        dependency_perc = data['dependency']['percentage']
+                    start_joint = True
+                    for dependency in data['dependencies']:
+                        dependency_joint = dependency['joint']
+                        if rospy.get_param(f'/multimove_simulation/start/{dependency_joint}') or rospy.get_param(f'/multimove_simulation/finished/{dependency_joint}'): # Wait until the dependency joint starts before monitoring it
+                            dependency_joint_target = trajectory[dependency_joint][0]['target']
+                            dependency_perc = dependency['percentage']
+                            dependency_condition = abs(self.positions[dependency_joint] - self.prevPositions[dependency_joint]) > abs(dependency_perc * (dependency_joint_target - self.prevPositions[dependency_joint]) / 100)
+                            print(joint, "dep", dependency, dependency_condition, start_joint)
+                            start_joint = start_joint and dependency_condition
+                            print(start_joint)
+                            
+                        else:
+                            start_joint = False
 
-                        if abs(self.positions[dependency_joint] - self.prevPositions[dependency_joint]) > abs(dependency_perc * (dependency_joint_target - self.prevPositions[dependency_joint]) / 100):
-                            rospy.loginfo(f'Starting {joint}')
-                            self.prevPositions[joint] = self.positions[joint]
-                            rospy.set_param(f'/multimove_simulation/start/{joint}', True)
+                    if (start_joint):
+                        rospy.loginfo(f'Starting {joint}')
+                        self.prevPositions[joint] = self.positions[joint]
+                        rospy.set_param(f'/multimove_simulation/start/{joint}', True)
+
         rospy.sleep(0.2)
 
         if self.preempt_requested():
@@ -222,37 +245,37 @@ def main():
         sm_client1 = smach.StateMachine(outcomes = ['success'], input_keys=['trajectory'])
 
         with sm_client1:
-            smach.StateMachine.add("Client1", Client(1), {'updateTrajectory': 'updateClient1Trajectory', 'success': 'success'})
+            smach.StateMachine.add("Client1", Client(1), {'success': 'updateClient1Trajectory'})
             smach.StateMachine.add("updateClient1Trajectory", updateTrajectory(1), {'success': 'Client1', 'done': 'success'})
 
         sm_client2 = smach.StateMachine(outcomes = ['success'], input_keys=['trajectory'])
 
         with sm_client2:
-            smach.StateMachine.add("Client2", Client(2), {'updateTrajectory': 'updateClient2Trajectory', 'success': 'success'})
+            smach.StateMachine.add("Client2", Client(2), {'success': 'updateClient2Trajectory'})
             smach.StateMachine.add("updateClient2Trajectory", updateTrajectory(2), {'success': 'Client2', 'done': 'success'})
 
         sm_client3 = smach.StateMachine(outcomes = ['success'], input_keys=['trajectory'])
 
         with sm_client3:
-            smach.StateMachine.add("Client3", Client(3), {'updateTrajectory': 'updateClient3Trajectory', 'success': 'success'})
+            smach.StateMachine.add("Client3", Client(3), {'success': 'updateClient3Trajectory'})
             smach.StateMachine.add("updateClient3Trajectory", updateTrajectory(3), {'success': 'Client3', 'done': 'success'})
 
         sm_client4 = smach.StateMachine(outcomes = ['success'], input_keys=['trajectory'])
 
         with sm_client4:
-            smach.StateMachine.add("Client4", Client(4), {'updateTrajectory': 'updateClient4Trajectory', 'success': 'success'})
+            smach.StateMachine.add("Client4", Client(4), {'success': 'updateClient4Trajectory'})
             smach.StateMachine.add("updateClient4Trajectory", updateTrajectory(4), {'success': 'Client4', 'done': 'success'})
 
         sm_client5 = smach.StateMachine(outcomes = ['success'], input_keys=['trajectory'])
 
         with sm_client5:
-            smach.StateMachine.add("Client5", Client(5), {'updateTrajectory': 'updateClient5Trajectory', 'success': 'success'})
+            smach.StateMachine.add("Client5", Client(5), {'success': 'updateClient5Trajectory'})
             smach.StateMachine.add("updateClient5Trajectory", updateTrajectory(5), {'success': 'Client5', 'done': 'success'})
 
         sm_client6 = smach.StateMachine(outcomes = ['success'], input_keys=['trajectory'])
 
         with sm_client6:
-            smach.StateMachine.add("Client6", Client(6), {'updateTrajectory': 'updateClient6Trajectory', 'success': 'success'})
+            smach.StateMachine.add("Client6", Client(6), {'success': 'updateClient6Trajectory'})
             smach.StateMachine.add("updateClient6Trajectory", updateTrajectory(6), {'success': 'Client6', 'done': 'success'})
 
         with sm_monitor:
