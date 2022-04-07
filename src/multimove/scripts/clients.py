@@ -114,7 +114,7 @@ class updateTrajectory(smach.State):
 class Client(smach.State):
 
     def __init__(self, order):
-        smach.State.__init__(self, outcomes = ['success'], input_keys=['trajectory'])
+        smach.State.__init__(self, outcomes = ['success', 'preempted', 'aborted'], input_keys=['trajectory'])
         self.name = "Client" + str(order)
         self.order = order
         
@@ -125,7 +125,7 @@ class Client(smach.State):
         pass
 
     def done_cb(self, state, result):
-        rospy.loginfo(f'{self.name} finished with result:\n{result}')
+        rospy.loginfo(f'{self.name} finished movement.')
 
 
     def execute(self, userdata):
@@ -146,6 +146,7 @@ class Client(smach.State):
 
         while not rospy.get_param(f'/multimove_simulation/start/joint_{self.order}'):
             if self.preempt_requested():
+                self.client.cancel_goal()
                 self.service_preempt()
                 return 'preempted'
 
@@ -154,17 +155,21 @@ class Client(smach.State):
         trajectory.points.append(JointTrajectoryPoint(positions = positions, velocities = [0.0], time_from_start = duration))
         goal.trajectory = trajectory
 
-        if self.preempt_requested():
-            self.service_preempt()
-            return 'preempted'
-
         self.client.send_goal(goal, feedback_cb = self.feedback_cb, done_cb = self.done_cb)
 
         self.client.wait_for_result()
 
+        if rospy.is_shutdown():
+            self.client.cancel_goal()
+            return "preempted"
+
         rospy.set_param(f'/multimove_simulation/finished/joint_{self.order}', True)
 
-        return 'success'
+        if self.client.get_state() == 3 or self.client.get_state() == 4: # SUCCEEDED or ABORTED due to exceeding stopped_velocity_tolerance
+            return "success"
+
+        elif self.client.get_state() == 5 or self.client.get_state() == 9: # REJECTED or LOST
+            return "aborted"
 
 class MonitorClient(smach.State):
     
@@ -209,8 +214,11 @@ class MonitorClient(smach.State):
                         self.prevPositions[joint] = self.positions[joint]
                         rospy.set_param(f'/multimove_simulation/start/{joint}', True)
 
-        rospy.sleep(0.2)
-
+        try:
+            rospy.sleep(0.2)
+        except rospy.exceptions.ROSInterruptException:
+            return 'preempted'
+            
         if self.preempt_requested():
             self.service_preempt()
             return 'preempted'
@@ -220,13 +228,23 @@ class MonitorClient(smach.State):
 def child_termination_cb(outcome_map):
     if outcome_map['Client1StateMachine'] and outcome_map['Client2StateMachine'] and outcome_map['Client3StateMachine'] and outcome_map['Client4StateMachine'] and outcome_map['Client5StateMachine'] and outcome_map['Client6StateMachine']:
         return True
+    
+    elif outcome_map['Client1StateMachine'] == 'aborted' or outcome_map['Client2StateMachine'] == 'aborted' or outcome_map['Client3StateMachine'] == 'aborted' or outcome_map['Client4StateMachine'] == 'aborted' or outcome_map['Client5StateMachine'] == 'aborted' or outcome_map['Client6StateMachine'] == 'aborted':
+        return True
 
+    elif outcome_map['Client1StateMachine'] == 'preempted' or outcome_map['Client2StateMachine'] == 'preempted' or outcome_map['Client3StateMachine'] == 'preempted' or outcome_map['Client4StateMachine'] == 'preempted' or outcome_map['Client5StateMachine'] == 'preempted' or outcome_map['Client6StateMachine'] == 'preempted':
+        return True
+    
     return False
 
 def outcome_cb(outcome_map):
     if outcome_map['Client1StateMachine'] == 'success' and outcome_map['Client2StateMachine'] == 'success' and outcome_map['Client3StateMachine'] == 'success' and outcome_map['Client4StateMachine'] == 'success' and outcome_map['Client5StateMachine'] == 'success' and outcome_map['Client6StateMachine'] == 'success':
         return 'successOutcome'
     else:
+        for joint in range(6):
+            rospy.set_param(f'/multimove_simulation/start/joint_{joint+1}', False)
+            rospy.set_param(f'/multimove_simulation/finished/joint_{joint+1}', False)
+
         return 'failureOutcome'
 
 def main():
@@ -246,40 +264,40 @@ def main():
 
         sm_monitor = smach.StateMachine(outcomes = ['monitor_success'], input_keys=['trajectory'])
 
-        sm_client1 = smach.StateMachine(outcomes = ['success'], input_keys=['trajectory'])
+        sm_client1 = smach.StateMachine(outcomes = ['success', 'aborted', 'preempted'], input_keys=['trajectory'])
 
         with sm_client1:
-            smach.StateMachine.add("Client1", Client(1), {'success': 'updateClient1Trajectory'})
+            smach.StateMachine.add("Client1", Client(1), {'success': 'updateClient1Trajectory', 'aborted': 'aborted', 'preempted': 'preempted'})
             smach.StateMachine.add("updateClient1Trajectory", updateTrajectory(1), {'success': 'Client1', 'done': 'success'})
 
-        sm_client2 = smach.StateMachine(outcomes = ['success'], input_keys=['trajectory'])
+        sm_client2 = smach.StateMachine(outcomes = ['success', 'aborted', 'preempted'], input_keys=['trajectory'])
 
         with sm_client2:
-            smach.StateMachine.add("Client2", Client(2), {'success': 'updateClient2Trajectory'})
+            smach.StateMachine.add("Client2", Client(2), {'success': 'updateClient2Trajectory', 'aborted': 'aborted', 'preempted': 'preempted'})
             smach.StateMachine.add("updateClient2Trajectory", updateTrajectory(2), {'success': 'Client2', 'done': 'success'})
 
-        sm_client3 = smach.StateMachine(outcomes = ['success'], input_keys=['trajectory'])
+        sm_client3 = smach.StateMachine(outcomes = ['success', 'aborted', 'preempted'], input_keys=['trajectory'])
 
         with sm_client3:
-            smach.StateMachine.add("Client3", Client(3), {'success': 'updateClient3Trajectory'})
+            smach.StateMachine.add("Client3", Client(3), {'success': 'updateClient3Trajectory', 'aborted': 'aborted', 'preempted': 'preempted'})
             smach.StateMachine.add("updateClient3Trajectory", updateTrajectory(3), {'success': 'Client3', 'done': 'success'})
 
-        sm_client4 = smach.StateMachine(outcomes = ['success'], input_keys=['trajectory'])
+        sm_client4 = smach.StateMachine(outcomes = ['success', 'aborted', 'preempted'], input_keys=['trajectory'])
 
         with sm_client4:
-            smach.StateMachine.add("Client4", Client(4), {'success': 'updateClient4Trajectory'})
+            smach.StateMachine.add("Client4", Client(4), {'success': 'updateClient4Trajectory', 'aborted': 'aborted', 'preempted': 'preempted'})
             smach.StateMachine.add("updateClient4Trajectory", updateTrajectory(4), {'success': 'Client4', 'done': 'success'})
 
-        sm_client5 = smach.StateMachine(outcomes = ['success'], input_keys=['trajectory'])
+        sm_client5 = smach.StateMachine(outcomes = ['success', 'aborted', 'preempted'], input_keys=['trajectory'])
 
         with sm_client5:
-            smach.StateMachine.add("Client5", Client(5), {'success': 'updateClient5Trajectory'})
+            smach.StateMachine.add("Client5", Client(5), {'success': 'updateClient5Trajectory', 'aborted': 'aborted', 'preempted': 'preempted'})
             smach.StateMachine.add("updateClient5Trajectory", updateTrajectory(5), {'success': 'Client5', 'done': 'success'})
 
-        sm_client6 = smach.StateMachine(outcomes = ['success'], input_keys=['trajectory'])
+        sm_client6 = smach.StateMachine(outcomes = ['success', 'aborted', 'preempted'], input_keys=['trajectory'])
 
         with sm_client6:
-            smach.StateMachine.add("Client6", Client(6), {'success': 'updateClient6Trajectory'})
+            smach.StateMachine.add("Client6", Client(6), {'success': 'updateClient6Trajectory', 'aborted': 'aborted', 'preempted': 'preempted'})
             smach.StateMachine.add("updateClient6Trajectory", updateTrajectory(6), {'success': 'Client6', 'done': 'success'})
 
         with sm_monitor:
